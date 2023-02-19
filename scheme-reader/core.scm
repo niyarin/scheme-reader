@@ -17,6 +17,7 @@
     (let ((pc (peek-char port)))
       (cond
         ((char=? pc #\)) ;;end
+         (read-char port)
          (reverse ls))
         ((eof-object? pc) (error "READ END!"))
         (else (loop (cons (get-token port) ls)))))))
@@ -45,14 +46,55 @@
         (loop (cons (read-char port) ls))
         (string->symbol (list->string (reverse ls)))))))
 
+(define (%read-char-literal port)
+  (read-char port)
+  (let loop ((ls (list (read-char port))))
+    (let ((pc (peek-char port)))
+      (cond
+        ((char-lower-case? pc) (loop (cons (read-char port) ls)))
+        ((null? (cdr ls)) (car ls))
+        ((string-append (reverse ls))
+         => (lambda (s)
+              (cond
+                ((string=? s "newline") #\newline)
+                ((string=? s "null") #\null)
+                ((string=? s "return") #\return)
+                ((string=? s "space") #\space)
+                ((string=? s "tab") #\tab)
+                ((string=? s "escape") #\escape)
+                (else (error "Invalid literal.")))))))))
+
+
+(define (read-sharp port)
+  (read-char port)
+  (let ((pc (peek-char port)))
+    (case pc
+      ((#\\) (%read-char-literal port))
+      (else (error "WIP")))))
+
+(define (read-u10integer port)
+  (let loop ((res 0))
+    (let ((pc (peek-char port)))
+      (if (and (not (eof-object? pc)) (char-numeric? pc))
+        (loop (+ (* 10 res) (- (char->integer (read-char port))
+                               (char->integer #\0))))
+        res))))
+
+(define (read-minus port)
+  (read-char port)
+  '-)
+
 (define (get-token port)
   (let ((pc (peek-char port)))
     (cond
-      ((eq? pc #\()
-       (read-list port))
+      ((eof-object? pc) (eof-object))
+      ((char=? pc #\() (read-list port))
+      ((char=? pc #\') (read-char port) (list 'quote (get-token port)))
       ((or (char-alphabetic? pc)
            (char-special-initial? pc))
         (read-symbol port))
+      ((char-numeric? pc) (read-u10integer port))
+      ((char=? pc #\-) (read-minus port))
       ((or (eq? pc #\space)
            (eq? pc #\tab))
        (make-lexical 'SPACE (read-char port)))
@@ -61,12 +103,11 @@
        (make-lexical 'NEWLINE (read-char port)))
       ((eq? pc #\#)
         ;;sharp-read
-       )
+        (read-sharp port))
       ((eq? pc #\;)
        ;;read-online-comment
        (read-online-comment port))
-      ((eq? pc #\|)
-       )
+      ((eq? pc #\|))
       ((eq? pc #\"))
       (else
         (read-char port)))))
@@ -95,5 +136,5 @@
                   (current-input-port))))
     (let ((res (remove-visual-literals (read-internal port))))
       (if (null? res)
-        (error "ERROR")
+        (eof-object)
         (car res)))))
