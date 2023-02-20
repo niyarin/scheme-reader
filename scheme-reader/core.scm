@@ -1,5 +1,5 @@
 (import (scheme base)
-        (only (scheme list) filter)
+        (only (scheme list) remove)
         (scheme char)
         (scheme write))
 ;;まだドット対は未サポート
@@ -64,7 +64,6 @@
                 ((string=? s "escape") #\escape)
                 (else (error "Invalid literal.")))))))))
 
-
 (define (read-sharp port)
   (read-char port)
   (let ((pc (peek-char port)))
@@ -79,6 +78,55 @@
         (loop (+ (* 10 res) (- (char->integer (read-char port))
                                (char->integer #\0))))
         res))))
+
+(define (read-u16bit-integer port)
+  (let loop ((res 0))
+    (let ((pc (peek-char port)))
+      (case pc
+        ((#\0 #\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9)
+         (loop (+ (* 16 res) (- (char->integer (read-char port))
+                                (char->integer #\0)))))
+        ((#\A #\B #\C #\D #\E #\F)
+         (loop (+ (* 16 res) (+ (- (char->integer (read-char port))
+                                   (char->integer #\A))
+                                10))))
+        ((#\a #\b #\c #\d #\e #\f)
+         (loop (+ (* 16 res) (+ (- (char->integer (read-char port))
+                                   (char->integer #\a))
+                                10))))
+        (else res)))))
+
+(define (%read-escape port)
+  (let ((c (read-char port)))
+    (display "READ ESCAPE!!!!!")(write c)(newline)
+    (case c
+      ((#\") #\")
+      ((#\\) #\\)
+      ((#\x)
+       ;;hex scalar value
+        (let* ((res (read-u16bit-integer port))
+               (semi-colon-check (read-char port)))
+          (unless (eq? semi-colon-check #\;)
+            (error "Can't read \\x<hex scalar value>;"))
+          (integer->char res)))
+      ((#\|) #\|)
+      ((#\a) #\alarm)
+      ((#\b) #\backspace)
+      ((#\t) #\tab)
+      ((#\n) #\newline)
+      ((#\r) #\return))))
+
+(define (read-string-literal port)
+  (read-char port)
+  (let loop ((res '()))
+    (let ((c (read-char port)))
+      (cond
+        ((char=? c #\\)
+         (display "IN ESCAPE!")(display (reverse res))(newline)
+         ;escape
+         (loop (cons (%read-escape port) res)))
+        ((char=? c #\") (list->string (reverse res)))
+        (else (loop (cons c res)))))))
 
 (define (read-minus port)
   (read-char port)
@@ -101,6 +149,7 @@
       ((or (eq? pc #\newline)
            (eq? pc #\return))
        (make-lexical 'NEWLINE (read-char port)))
+      ((char=? pc #\") (read-string-literal port))
       ((eq? pc #\#)
         ;;sharp-read
         (read-sharp port))
@@ -128,7 +177,7 @@
 (define (remove-visual-literals obj)
   (cond
     ((list? obj)
-     (map remove-visual-literals (filter (lambda (x) (not (visual-literal? x))) obj)))
+     (map remove-visual-literals (remove visual-literal? obj)))
     (else obj)))
 
 (define (read . args)
