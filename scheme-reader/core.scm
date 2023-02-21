@@ -53,7 +53,7 @@
       (cond
         ((char-lower-case? pc) (loop (cons (read-char port) ls)))
         ((null? (cdr ls)) (car ls))
-        ((string-append (reverse ls))
+        ((list->string (reverse ls))
          => (lambda (s)
               (cond
                 ((string=? s "newline") #\newline)
@@ -64,12 +64,39 @@
                 ((string=? s "escape") #\escape)
                 (else (error "Invalid literal.")))))))))
 
+(define (%read-true-literal port)
+  (read-char port)
+  (let ((pc (peek-char port)))
+    (if (char=? pc #\r)
+      (begin
+        (read-char port)
+        (if (and (char=? (read-char port) #\u) (char=? (read-char port) #\e))
+          #t
+          (error "Invalid literal.")))
+      #t)))
+
+(define (%read-false-literal port)
+  (read-char port)
+  (let ((pc (peek-char port)))
+    (if (char=? pc #\a)
+      (begin
+        (read-char port)
+        (if
+          (and (char=? (read-char port) #\l)
+               (char=? (read-char port) #\s)
+               (char=? (read-char port) #\e))
+          #f
+          (error "Invalid literal")))
+      #f)))
+
 (define (read-sharp port)
   (read-char port)
   (let ((pc (peek-char port)))
     (case pc
       ((#\\) (%read-char-literal port))
-      (else (error "WIP")))))
+      ((#\t) (%read-true-literal port))
+      ((#\f) (%read-false-literal port))
+      (else (error "WIP" pc)))))
 
 (define (read-u10integer port)
   (let loop ((res 0))
