@@ -62,7 +62,9 @@
                 ((string=? s "space") #\space)
                 ((string=? s "tab") #\tab)
                 ((string=? s "escape") #\escape)
-                (else (error "Invalid literal.")))))))))
+                ((string=? s "alarm") #\alarm)
+                ((string=? s "backspace") #\backspace)
+                (else (error "Invalid literal." s)))))))))
 
 (define (%read-true-literal port)
   (read-char port)
@@ -149,7 +151,6 @@
     (let ((c (read-char port)))
       (cond
         ((char=? c #\\)
-         (display "IN ESCAPE!")(display (reverse res))(newline)
          ;escape
          (loop (cons (%read-escape port) res)))
         ((char=? c #\") (list->string (reverse res)))
