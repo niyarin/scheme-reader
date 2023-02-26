@@ -5,11 +5,14 @@
 ;;まだドット対は未サポート
 
 (define-record-type <lexical>
-  (make-lexical type data)
+  (%make-lexical type data origin)
   lexical?
   (type ref-type)
-  (data ref-data))
+  (data ref-data)
+  (origin ref-origin))
 
+(define (make-lexical type data)
+  (%make-lexical type data #f))
 
 (define (read-list port)
   (read-char port)
@@ -73,9 +76,9 @@
       (begin
         (read-char port)
         (if (and (char=? (read-char port) #\u) (char=? (read-char port) #\e))
-          #t
+          (%make-lexical 'ATOM #t "#true")
           (error "Invalid literal.")))
-      #t)))
+      (%make-lexical 'ATOM #t "#t"))))
 
 (define (%read-false-literal port)
   (read-char port)
@@ -200,12 +203,18 @@
         (reverse (cons tkn res))))))
 
 (define (visual-literal? obj)
-  (lexical? obj))
+  (and (lexical? obj)
+       (or (eq? (ref-type obj) 'SPACE)
+           (eq? (ref-type obj) 'NEWLINE)
+           (eq? (ref-type obj) 'COMMENT))))
 
 (define (remove-visual-literals obj)
   (cond
     ((list? obj)
      (map remove-visual-literals (remove visual-literal? obj)))
+    ((and (lexical? obj)
+          (eq? (ref-type obj) 'ATOM))
+     (ref-data obj))
     (else obj)))
 
 (define (read . args)
