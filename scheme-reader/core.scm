@@ -49,7 +49,7 @@
           (char=? c #\.)
           (char=? c #\@)))
 
-    (define (read-symbol port)
+    (define (read-identifier port)
       ;;<initial> <subsequent>*
       ;; NOTE: This procedure does not check whether the first character is <initial>.
       (let loop ((ls '()))
@@ -186,7 +186,7 @@
           ((or (char-alphabetic? pc)
                (char-special-initial? pc))
            ;;<initial> <subsequent>*
-            (read-symbol port))
+            (read-identifier port))
           ((char-numeric? pc) (read-u10integer port))
           ((char=? pc #\-) (read-minus port))
           ((or (eq? pc #\space)
