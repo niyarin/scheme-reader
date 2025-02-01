@@ -41,13 +41,24 @@
         ((#\! #\$ #\% #\& #\* #\\ #\: #\< #\= #\> #\? #\^ #\_ #\~) #t)
         (else #f)))
 
+    (define (char-explicit-sign? c)
+      (or (char=? c #\+) (char=? c #\-)))
+
+    (define (char-special-subsequent? c)
+      (or (char-explicit-sign? c)
+          (char=? c #\.)
+          (char=? c #\@)))
+
     (define (read-symbol port)
       ;;<initial> <subsequent>*
+      ;; NOTE: This procedure does not check whether the first character is <initial>.
       (let loop ((ls '()))
         (let ((pc (peek-char port)))
-          (if (or (char-special-initial? pc)
-                   (char-alphabetic? pc)
-                   (char-numeric? pc))
+          (if (and (not (eof-object? pc))
+                   (or (char-special-initial? pc)
+                       (char-special-subsequent? pc)
+                       (char-alphabetic? pc)
+                       (char-numeric? pc)))
             (loop (cons (read-char port) ls))
             (string->symbol (list->string (reverse ls)))))))
 
@@ -173,6 +184,7 @@
           ((char=? pc #\') (read-char port) (list 'quote (get-token port)))
           ((or (char-alphabetic? pc)
                (char-special-initial? pc))
+           ;;<initial> <subsequent>*
             (read-symbol port))
           ((char-numeric? pc) (read-u10integer port))
           ((char=? pc #\-) (read-minus port))
