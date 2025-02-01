@@ -27,7 +27,7 @@
             ((eof-object? pc) (error "READ END!"))
             (else (loop (cons (get-token port) ls)))))))
 
-    (define (read-online-comment port)
+    (define (read-oneline-comment port)
       (read-char port)
       (let loop ((ls '()))
         (let ((c (read-char port)))
@@ -187,8 +187,8 @@
             ;;sharp-read
             (read-sharp port))
           ((eq? pc #\;)
-           ;;read-online-comment
-           (read-online-comment port))
+           ;;read-oneline-comment
+           (read-oneline-comment port))
           ((eq? pc #\|))
           ((eq? pc #\"))
           (else
