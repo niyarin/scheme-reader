@@ -67,7 +67,8 @@
       (let loop ((ls (list (read-char port))))
         (let ((pc (peek-char port)))
           (cond
-            ((char-lower-case? pc) (loop (cons (read-char port) ls)))
+            ((and (not (eof-object? pc))
+                  (char-lower-case? pc)) (loop (cons (read-char port) ls)))
             ((null? (cdr ls)) (car ls))
             ((list->string (reverse ls))
              => (lambda (s)
