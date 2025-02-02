@@ -17,6 +17,15 @@
 (check (rdr/read (open-input-string "#\\newline"))
        => #\newline)
 
+(check (rdr/read (open-input-string "|hello|"))
+       => 'hello)
+
+(check (rdr/read (open-input-string "|h\x65;llo|"))
+       => 'hello)
+
+(check (rdr/read (open-input-string "|he\\|\\|o|"))
+       => (string->symbol "he||o"))
+
 ;; list test
 
 (check (rdr/read (open-input-string "(foo bar baz)"))

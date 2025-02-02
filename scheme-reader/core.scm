@@ -62,6 +62,42 @@
             (loop (cons (read-char port) ls))
             (string->symbol (list->string (reverse ls)))))))
 
+    (define (read-hex-scalr-value port)
+      ;; <hex digit> +
+      (let loop ((res 0))
+        (let* ((pc (peek-char port))
+               (head-char (or (and (char-numeric? pc) #\0)
+                              (and (char<=? #\a pc #\f) #\a))))
+              (if head-char
+                (loop (+ (* res 16)
+                         (- (char->integer (read-char port))
+                            (char->integer head-char))))
+                res))))
+
+    (define (read-vertical-var-identifier port)
+        ;; <vertical line> <symbol element>* <vertical line>
+        (read-char port);read vertical line
+        (let loop ((ls '()))
+          (let ((pc (peek-char port)))
+            (cond
+              ((eof-object? pc) (error "Lexical error: not closed vertical line."))
+              ((char=? pc #\|);;close
+               (read-char port)
+               (string->symbol (list->string (reverse ls))))
+              ((not (char=? pc #\\))
+               (loop (cons (read-char port) ls)))
+              ((and (char=? (peek-char port) #\x)
+                    (read-char port)
+                    (read-hex-scalr-value port))
+               ;;inline hex escape
+               => (lambda (v)
+                    (read-char port);; read #\;
+                    (loop (cons (integer->char v) ls))))
+              ((case (and (read-char port) (peek-char port))
+                     ((#\a #\b #\t #\n #\r #\|) #t) (else #f))
+               (loop (cons (read-char port) ls)))
+              (else (error "Lexical error: invalid char." (peek-char port)))))))
+
     (define (%read-char-literal port)
       (read-char port)
       (let loop ((ls (list (read-char port))))
@@ -187,6 +223,7 @@
                (char-special-initial? pc))
            ;;<initial> <subsequent>*
             (read-identifier port))
+          ((char=? pc #\|) (read-vertical-var-identifier port))
           ((char-numeric? pc) (read-u10integer port))
           ((char=? pc #\-) (read-minus port))
           ((or (eq? pc #\space)
