@@ -32,6 +32,16 @@
        => '(foo bar baz))
 
 
+(check (rdr/read (open-input-string "(foo bar baz   )"))
+       => '(foo bar baz))
+
+
+(check (rdr/read (open-input-string "(foo bar . baz)"))
+       => '(foo bar . baz))
+
+(check (rdr/read (open-input-string "(foo bar . (a b c) )"))
+       => '(foo bar . (a b c)))
+
 (check (rdr/read (open-input-string "((foo bar) baz)"))
        => '((foo bar) baz))
 

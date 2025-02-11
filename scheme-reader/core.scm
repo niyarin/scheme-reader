@@ -16,16 +16,26 @@
     (define (make-lexical type data)
       (%make-lexical type data #f))
 
-    (define (read-list port)
+    (define (make-lexical-dot-pair rests-list)
+      (%make-lexical 'DOT-PAIR rests-list #f))
+
+    (define (read-pair port)
       (read-char port)
-      (let loop ((ls '()))
-        (let ((pc (peek-char port)))
-          (cond
-            ((char=? pc #\)) ;;end
-             (read-char port)
-             (reverse ls))
-            ((eof-object? pc) (error "READ END!"))
-            (else (loop (cons (get-token port) ls)))))))
+      (let ((res-pair-head (list '())))
+        (let loop ((res-pair res-pair-head))
+          (let ((pc (peek-char port)))
+            (cond
+              ((char=? pc #\)) (read-char port) (cdr res-pair-head))
+              ((char=? pc #\.)
+               (read-char port)
+               (let ((rests (list (get-token port))))
+                 (set-cdr! res-pair (make-lexical-dot-pair rests))
+                 (loop rests)))
+              ((eof-object? pc) (error "READ END!"))
+              (else
+                (set-cdr! res-pair (list '()))
+                (set-car! (cdr res-pair) (get-token port))
+                (loop (cdr res-pair))))))))
 
     (define (read-oneline-comment port)
       (read-char port)
@@ -217,7 +227,7 @@
       (let ((pc (peek-char port)))
         (cond
           ((eof-object? pc) (eof-object))
-          ((char=? pc #\() (read-list port))
+          ((char=? pc #\() (read-pair port))
           ((char=? pc #\') (read-char port) (list 'quote (get-token port)))
           ((or (char-alphabetic? pc)
                (char-special-initial? pc))
@@ -264,9 +274,19 @@
       (cond
         ((list? obj)
          (map remove-visual-literals (remove visual-literal? obj)))
+        ((pair? obj)
+         (let ((head (remove-visual-literals (car obj)))
+               (rest (remove-visual-literals (cdr obj))))
+           (if (visual-literal? head)
+             rest
+             (cons head rest))))
         ((and (lexical? obj)
               (eq? (ref-type obj) 'ATOM))
          (ref-data obj))
+        ((and (lexical? obj)
+              (eq? (ref-type obj) 'DOT-PAIR))
+         (let ((rests (remove-visual-literals (ref-data obj))))
+           (car rests)))
         (else obj)))
 
     (define (read . args)
