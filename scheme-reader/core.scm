@@ -3,7 +3,7 @@
           (only (scheme list) remove)
           (scheme char)
           (scheme write))
-  (export read read-internal)
+  (export read read-internal lexical? lexical-type lexical-data lexical-origin)
   ;;まだドット対は未サポート
   (begin
     (define-record-type <lexical>
@@ -12,6 +12,10 @@
       (type ref-type)
       (data ref-data)
       (origin ref-origin))
+
+    (define lexical-type ref-type)
+    (define lexical-data ref-data)
+    (define lexical-origin ref-origin)
 
     (define (make-lexical type data)
       (%make-lexical type data #f))
@@ -190,7 +194,6 @@
 
     (define (%read-escape port)
       (let ((c (read-char port)))
-        (display "READ ESCAPE!!!!!")(write c)(newline)
         (case c
           ((#\") #\")
           ((#\\) #\\)
