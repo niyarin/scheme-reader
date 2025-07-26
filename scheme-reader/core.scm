@@ -11,7 +11,6 @@
               (scheme char)
               (scheme write))))
   (export read read-internal lexical? lexical-type lexical-data lexical-origin)
-  ;;まだドット対は未サポート
   (begin
     (define-record-type <lexical>
       (%make-lexical type data origin)
@@ -30,6 +29,10 @@
     (define (make-lexical-dot-pair rests-list)
       (%make-lexical 'DOT-PAIR rests-list #f))
 
+    (define (single-dot? obj)
+      (and (lexical? obj)
+           (eq? (ref-type obj) 'DOT)))
+
     (define (read-pair port)
       (read-char port)
       (let ((res-pair-head (list '())))
@@ -38,10 +41,17 @@
             (cond
               ((char=? pc #\)) (read-char port) (cdr res-pair-head))
               ((char=? pc #\.)
-               (read-char port)
-               (let ((rests (list (get-token port))))
-                 (set-cdr! res-pair (make-lexical-dot-pair rests))
-                 (loop rests)))
+               (let ((token (read-dot port)))
+                 (if (single-dot? token)
+                   (begin
+                     (read-char port)
+                     (let ((rests (list (get-token port))))
+                       (set-cdr! res-pair (make-lexical-dot-pair rests))
+                       (loop rests)))
+                   (begin
+                    (set-cdr! res-pair (list '()))
+                    (set-car! (cdr res-pair) token)
+                    (loop (cdr res-pair))))))
               ((eof-object? pc) (error "READ END!"))
               (else
                 (set-cdr! res-pair (list '()))
@@ -69,6 +79,23 @@
       (or (char-explicit-sign? c)
           (char=? c #\.)
           (char=? c #\@)))
+
+    (define (read-dot port)
+      (read-char port)
+      (let ((pc (peek-char port)))
+        (case pc
+          ;;TODO: dot subsequenct
+          ((#\.);
+           ;;TODO: subsequent
+           (read-char port)
+           (let loop ((ls '(#\. #\.)))
+             (let ((pc* (peek-char port)))
+               (if (and (char? pc*) (char=? pc* #\.))
+                 (begin
+                   (read-char port)
+                   (loop (cons pc ls)))
+                 (string->symbol (list->string (reverse ls)))))))
+          (else (%make-lexical 'DOT "." ".")))))
 
     (define (read-identifier port)
       ;;<initial> <subsequent>*
@@ -245,6 +272,7 @@
                (char-special-initial? pc))
            ;;<initial> <subsequent>*
             (read-identifier port))
+          ((char=? pc #\.) (read-dot port))
           ((char=? pc #\|) (read-vertical-var-identifier port))
           ((char-numeric? pc) (read-u10integer port))
           ((char=? pc #\-) (read-minus port))

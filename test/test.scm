@@ -41,6 +41,9 @@
 (check (rdr/read (open-input-string "#false"))
        => #f)
 
+(check (rdr/read (open-input-string "..."))
+       => '...)
+
 ;; list test
 
 (check (rdr/read (open-input-string "(foo bar baz)"))
