@@ -29,6 +29,18 @@
 (check (rdr/read (open-input-string "|he\\|\\|o|"))
        => (string->symbol "he||o"))
 
+(check (rdr/read (open-input-string "#t"))
+       => #t)
+
+(check (rdr/read (open-input-string "#true"))
+       => #t)
+
+(check (rdr/read (open-input-string "#f"))
+       => #f)
+
+(check (rdr/read (open-input-string "#false"))
+       => #f)
+
 ;; list test
 
 (check (rdr/read (open-input-string "(foo bar baz)"))

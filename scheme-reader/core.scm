@@ -143,7 +143,8 @@
     (define (%read-true-literal port)
       (read-char port)
       (let ((pc (peek-char port)))
-        (if (char=? pc #\r)
+        (if (and (not (eof-object? pc))
+                 (char=? pc #\r))
           (begin
             (read-char port)
             (if (and (char=? (read-char port) #\u) (char=? (read-char port) #\e))
@@ -154,16 +155,17 @@
     (define (%read-false-literal port)
       (read-char port)
       (let ((pc (peek-char port)))
-        (if (char=? pc #\a)
+        (if (and (not (eof-object? pc))
+                 (char=? pc #\a))
           (begin
             (read-char port)
             (if
               (and (char=? (read-char port) #\l)
                    (char=? (read-char port) #\s)
                    (char=? (read-char port) #\e))
-              #f
+              (%make-lexical 'ATOM #f "#false")
               (error "Invalid literal")))
-          #f)))
+          (%make-lexical 'ATOM #f "#f"))))
 
     (define (read-sharp port)
       (read-char port)
