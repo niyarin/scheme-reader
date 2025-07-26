@@ -1,8 +1,15 @@
 (define-library (scheme-reader core)
-  (import (scheme base)
-          (only (scheme list) remove)
-          (scheme char)
-          (scheme write))
+  (cond-expand
+    (chicken
+      (import (scheme base)
+              (only (srfi 1) remove)
+              (scheme char)
+              (scheme write)))
+    (else
+      (import (scheme base)
+              (only (scheme list) remove)
+              (scheme char)
+              (scheme write))))
   (export read read-internal lexical? lexical-type lexical-data lexical-origin)
   ;;まだドット対は未サポート
   (begin
