@@ -52,7 +52,7 @@
 
     (define (char-special-initial? c)
       (case c
-        ((#\! #\$ #\% #\& #\* #\\ #\: #\< #\= #\> #\? #\^ #\_ #\~) #t)
+        ((#\! #\$ #\% #\& #\* #\/ #\: #\< #\= #\> #\? #\^ #\_ #\~) #t)
         (else #f)))
 
     (define (char-explicit-sign? c)

@@ -8,6 +8,9 @@
 (check (rdr/read (open-input-string "some-symbol"))
        => 'some-symbol)
 
+(check (rdr/read (open-input-string "some/symbol"))
+       => 'some/symbol)
+
 (check (rdr/read (open-input-string "some-symbol?"))
        => 'some-symbol?)
 
