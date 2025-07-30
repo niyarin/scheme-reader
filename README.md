@@ -1,5 +1,7 @@
 # Scheme-reader
-WIP
+This library provides a portable implementation of a Scheme reader.
+It can also produce an intermediate representation that preserves the original source notation and includes line number information.
+
 
 ## Usage
 ```scheme
