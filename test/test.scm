@@ -72,6 +72,16 @@
        => #\newline)
 
 
+;; multi line string test
+(check (rdr/read (open-input-string "\"abc \\     \ndef\""))
+       => "abc def")
+
+(check (rdr/read (open-input-string "\"abc \\\ndef\""))
+       => "abc def")
+
+(check (rdr/read (open-input-string "\"abc \\\r\ndef\""))
+       => "abc def")
+
 ;; double read test
 
 (let ((port (open-input-string "#\\newline\nlist")))
