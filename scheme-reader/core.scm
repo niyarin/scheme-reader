@@ -316,7 +316,11 @@
         (cond
           ((eof-object? pc) (eof-object))
           ((char=? pc #\() (read-pair port))
+
+          ;TODO: Use <lexical>.
           ((char=? pc #\') (read-char port) (list 'quote (get-token port)))
+          ((char=? pc #\`) (read-char port) (list 'quasiquote (get-token port)))
+
           ((or (char-alphabetic? pc)
                (char-special-initial? pc))
            ;;<initial> <subsequent>*
