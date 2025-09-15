@@ -385,9 +385,9 @@
         (else obj)))
 
     (define (read . args)
-      (let ((port (or (and (not (null? args)) (car args))
-                      (current-input-port))))
-        (let ((res (remove-visual-literals (read-internal port))))
+      (let* ((port (or (and (not (null? args)) (car args))
+                      (current-input-port)))
+             (res (remove-visual-literals (read-internal port))))
           (if (null? res)
             (eof-object)
-            (car res)))))))
+            (car res))))))
