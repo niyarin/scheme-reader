@@ -311,6 +311,14 @@
       (read-char port)
       '-)
 
+    (define (read-unquotes port)
+       (read-char port)
+       (if (char=? (peek-char port) #\@)
+         (begin
+           (read-char port)
+           (list 'unquote-splicing (get-token port)))
+         (list 'unquote (get-token port))))
+
     (define (get-token port)
       (let ((pc (peek-char port)))
         (cond
@@ -320,6 +328,7 @@
           ;TODO: Use <lexical>.
           ((char=? pc #\') (read-char port) (list 'quote (get-token port)))
           ((char=? pc #\`) (read-char port) (list 'quasiquote (get-token port)))
+          ((char=? pc #\,) (read-unquotes port))
 
           ((or (char-alphabetic? pc)
                (char-special-initial? pc))
