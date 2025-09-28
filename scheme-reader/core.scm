@@ -1,6 +1,6 @@
 (define-library (scheme-reader core)
   (cond-expand
-    ((or chicken guile)
+    ((or chicken guile kawa)
       (import (scheme base)
               (only (srfi 1) remove)
               (scheme char)
