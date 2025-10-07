@@ -17,6 +17,9 @@
 (check (rdr/read (open-input-string "#\\a"))
        => #\a)
 
+(check (rdr/read (open-input-string "#\\!"))
+       => #\!)
+
 (check (rdr/read (open-input-string "#\\newline"))
        => #\newline)
 
@@ -63,6 +66,9 @@
 (check (rdr/read (open-input-string "((foo bar) baz)"))
        => '((foo bar) baz))
 
+(check (rdr/read (open-input-string "\"abc\\x64;e\""))
+       => "abcde")
+
 ;; delimiter test
 
 (check (rdr/read (open-input-string "#\\newline list"))
@@ -87,6 +93,15 @@
 (let ((port (open-input-string "#\\newline\nlist")))
   (check (rdr/read port) => #\newline)
   (check (rdr/read port) => 'list))
+
+;; check shebang
+
+(check (rdr/lexical? (rdr/read-internal-or-handle-shebang
+                       (open-input-string "#!/usr/bin/gosh\n")))
+       => #t)
+(check (rdr/read-internal-or-handle-shebang
+         (open-input-string "#\\a"))
+       => #\a)
 
 (check-report)
 

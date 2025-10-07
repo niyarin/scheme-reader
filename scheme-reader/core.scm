@@ -9,7 +9,8 @@
               (only (scheme list) remove)
               (scheme char)
               (scheme write))))
-  (export read read-internal lexical? lexical-type lexical-data lexical-origin)
+  (export read read-internal lexical? lexical-type lexical-data lexical-origin
+          read-internal-or-handle-shebang)
   (begin
     (define-record-type <lexical>
       (%make-lexical type data origin)
@@ -193,14 +194,39 @@
               (error "Invalid literal")))
           (%make-lexical 'ATOM #f "#f"))))
 
-    (define (read-sharp port)
-      (read-char port)
-      (let ((pc (peek-char port)))
-        (case pc
+    (define (%read-sharp-aux pc port)
+      (case pc
           ((#\\) (%read-char-literal port))
           ((#\t) (%read-true-literal port))
           ((#\f) (%read-false-literal port))
-          (else (error "WIP" pc)))))
+          (else (error "WIP" pc))))
+
+    (define (read-sharp port)
+      (read-char port)
+      (let ((pc (peek-char port)))
+        (%read-sharp-aux pc port)))
+
+    (define (handle-shebang port)
+      (read-char port)
+      (let loop ((c (peek-char port))
+                 (content '()))
+        (if (char=? c #\newline)
+          (let ((content* (list->string (reverse content))))
+             (%make-lexical 'SHEBANG content* content*))
+          (begin
+            (read-char port)
+            (loop (peek-char port) (cons c content))))))
+
+    (define (read-internal-or-handle-shebang port)
+      (let ((top (peek-char port)))
+        (if (char=? top #\#)
+          (begin
+            (read-char port)
+            (let ((next (peek-char port)))
+              (if (char=? next #\!)
+                (handle-shebang port)
+                (%read-sharp-aux next port))))
+          (read-internal port))))
 
     (define (read-u10integer port)
       (let loop ((res 0))
