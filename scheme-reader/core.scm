@@ -12,6 +12,8 @@
   (export read read-internal lexical? lexical-type lexical-data lexical-origin
           read-internal-or-handle-shebang)
   (begin
+    (define use-guile-style-keyword (make-parameter #t))
+
     (define-record-type <lexical>
       (%make-lexical type data origin)
       lexical?
@@ -194,11 +196,21 @@
               (error "Invalid literal")))
           (%make-lexical 'ATOM #f "#f"))))
 
+    (define (%read-guile-style-keyword port)
+      (read-char port)
+      (let ((keyw-symbol (read-identifier port)))
+        ;;TODO: Save original code.
+        (%make-lexical 'KEYWORD keyw-symbol keyw-symbol)))
+
     (define (%read-sharp-aux pc port)
       (case pc
           ((#\\) (%read-char-literal port))
           ((#\t) (%read-true-literal port))
           ((#\f) (%read-false-literal port))
+          ((#\:)
+           (if (use-guile-style-keyword)
+             (%read-guile-style-keyword port)
+             (error "WIP")))
           (else (error "WIP" pc))))
 
     (define (read-sharp port)

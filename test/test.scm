@@ -103,5 +103,12 @@
          (open-input-string "#\\a"))
        => #\a)
 
+;; expand
+(check (rdr/lexical-type
+         (rdr/read (open-input-string "#:version")))
+       => 'KEYWORD)
+
+
+
 (check-report)
 
