@@ -47,6 +47,10 @@
 (check (rdr/read (open-input-string "..."))
        => '...)
 
+
+(check (rdr/read (open-input-string "#x00A0"))
+       => 160)
+
 ;; list test
 
 (check (rdr/read (open-input-string "(foo bar baz)"))

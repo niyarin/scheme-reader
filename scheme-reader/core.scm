@@ -202,6 +202,19 @@
         ;;TODO: Save original code.
         (%make-lexical 'KEYWORD keyw-symbol keyw-symbol)))
 
+    (define (%read-exactness port)
+      (let ((pc (peek-char port)))
+        (and (char=? pc #\#)
+             (case (read-char port)
+               ((#\i) 'inexactly)
+               ((#\e) 'exactly)
+               (else (error "Invalid exactness."))))))
+
+    (define (%read-radix16-number port)
+      (read-char port)
+      (let ((exactness (%read-exactness port)))
+        (read-u16bit-integer port)))
+
     (define (%read-sharp-aux pc port)
       (case pc
           ((#\\) (%read-char-literal port))
@@ -211,6 +224,8 @@
            (if (use-guile-style-keyword)
              (%read-guile-style-keyword port)
              (error "WIP")))
+          ((#\x);; <radix 16>
+           (%read-radix16-number port))
           (else (error "WIP" pc))))
 
     (define (read-sharp port)
