@@ -99,9 +99,8 @@
                  (string->symbol (list->string (reverse ls)))))))
           (else (%make-lexical 'DOT "." ".")))))
 
-    (define (read-identifier port)
-      ;;<initial> <subsequent>*
-      ;; NOTE: This procedure does not check whether the first character is <initial>.
+    (define (%read-identifier-aux port)
+      ;;read identifier as string
       (let loop ((ls '()))
         (let ((pc (peek-char port)))
           (if (and (not (eof-object? pc))
@@ -110,7 +109,25 @@
                        (char-alphabetic? pc)
                        (char-numeric? pc)))
             (loop (cons (read-char port) ls))
-            (string->symbol (list->string (reverse ls)))))))
+            (list->string (reverse ls))))))
+
+
+    (define (read-identifier port)
+      ;;<initial> <subsequent>*
+      ;; NOTE: This procedure does not check whether the first character is <initial>.
+      (string->symbol (%read-identifier-aux port)))
+
+    (define (read-peculiar-identifier-or-signed-integer port)
+      (let* ((first-char (read-char port))
+             (pc (peek-char port)))
+        (if (and (not (eof-object? pc)) (char-numeric? pc))
+            (case first-char
+              ((#\+)  (read-u10integer port))
+              ((#\-)  (- (read-u10integer port))))
+            (string->symbol
+              (string-append
+                (string first-char)
+                (%read-identifier-aux port))))))
 
     (define (read-hex-scalr-value port)
       ;; <hex digit> +
@@ -385,7 +402,7 @@
 
           ((char-explicit-sign? pc)
            ;;number or identifier
-           (read-identifier port))
+           (read-peculiar-identifier-or-signed-integer port))
           ((or (char-alphabetic? pc)
                (char-special-initial? pc))
            ;;<initial> <subsequent>*
