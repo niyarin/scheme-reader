@@ -383,6 +383,9 @@
           ((char=? pc #\`) (read-char port) (list 'quasiquote (get-token port)))
           ((char=? pc #\,) (read-unquotes port))
 
+          ((char-explicit-sign? pc)
+           ;;number or identifier
+           (read-identifier port))
           ((or (char-alphabetic? pc)
                (char-special-initial? pc))
            ;;<initial> <subsequent>*

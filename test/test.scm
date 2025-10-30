@@ -14,6 +14,9 @@
 (check (rdr/read (open-input-string "some-symbol?"))
        => 'some-symbol?)
 
+(check (rdr/read (open-input-string "+"))
+       => '+)
+
 (check (rdr/read (open-input-string "#\\a"))
        => #\a)
 
