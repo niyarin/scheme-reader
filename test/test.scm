@@ -17,6 +17,16 @@
 (check (rdr/read (open-input-string "+"))
        => '+)
 
+(check (rdr/read (open-input-string "a-b"))
+       => 'a-b)
+
+(check (rdr/read (open-input-string "-3"))
+       => -3)
+
+
+(check (rdr/read (open-input-string "1.234"))
+       => 1.234)
+
 (check (rdr/read (open-input-string "#\\a"))
        => #\a)
 

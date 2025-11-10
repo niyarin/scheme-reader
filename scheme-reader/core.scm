@@ -78,9 +78,10 @@
       (or (char=? c #\+) (char=? c #\-)))
 
     (define (char-special-subsequent? c)
-      (or (char-explicit-sign? c)
-          (char=? c #\.)
-          (char=? c #\@)))
+      (and (not (eof-object? c))
+           (or (char-explicit-sign? c)
+               (char=? c #\.)
+               (char=? c #\@))))
 
     (define (read-dot port)
       (read-char port)
@@ -272,13 +273,29 @@
                 (%read-sharp-aux next port))))
           (read-internal port))))
 
+    (define (%read-fractional-part port)
+      (let loop ((res 0)
+                 (unit 0.1))
+        (let ((pc (peek-char port)))
+          (cond
+            ((and (not (eof-object? pc)) (char-numeric? pc))
+             (loop (+ (* unit (- (char->integer (read-char port)) (char->integer #\0)))
+                      res)
+                   (* unit 0.1)))
+            (else res)))))
+
     (define (read-u10integer port)
       (let loop ((res 0))
         (let ((pc (peek-char port)))
-          (if (and (not (eof-object? pc)) (char-numeric? pc))
-            (loop (+ (* 10 res) (- (char->integer (read-char port))
-                                   (char->integer #\0))))
-            res))))
+          (cond
+            ((and (not (eof-object? pc)) (char-numeric? pc))
+              (loop (+ (* 10 res) (- (char->integer (read-char port))
+                                     (char->integer #\0)))))
+            ((and (not (eof-object? pc)) (char=? pc #\.))
+             (read-char port)
+             (+ (%read-fractional-part port)
+                res))
+            (else res)))))
 
     (define (read-u16bit-integer port)
       (let loop ((res 0)
@@ -404,7 +421,7 @@
            ;;number or identifier
            (read-peculiar-identifier-or-signed-integer port))
           ((or (char-alphabetic? pc)
-               (char-special-initial? pc))
+                 (char-special-initial? pc))
            ;;<initial> <subsequent>*
             (read-identifier port))
           ((char=? pc #\.) (read-dot port))
