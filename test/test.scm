@@ -87,6 +87,10 @@
 (check (rdr/read (open-input-string "\"abc\\x64;e\""))
        => "abcde")
 
+;; vector test
+(check (rdr/read (open-input-string "#(foo bar baz   )"))
+       => #(foo bar baz))
+
 ;; delimiter test
 
 (check (rdr/read (open-input-string "#\\newline list"))

@@ -262,6 +262,7 @@
            (if (use-guile-style-keyword)
              (%read-guile-style-keyword port)
              (error "WIP")))
+          ((#\() (list->vector (read-pair port)))
           ((#\x);; <radix 16>
            (%read-radix16-number port))
           ((#\!)
@@ -509,6 +510,11 @@
            (if (visual-literal? head)
              rest
              (cons head rest))))
+        ((vector? obj)
+         (list->vector
+           (map (lambda (o) (remove-visual-literals o case-fold-flag))
+                (remove visual-literal? (vector->list obj)))))
+
         ((and (lexical? obj)
               (eq? (ref-type obj) 'ATOM))
          (ref-data obj))
