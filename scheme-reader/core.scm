@@ -440,10 +440,7 @@
           ((eq? pc #\;)
            ;;read-oneline-comment
            (read-oneline-comment port))
-          ((eq? pc #\|))
-          ((eq? pc #\"))
-          (else
-            (read-char port)))))
+          (else (read-char port)))))
 
     (define (read-internal port)
       (let loop ((res '()))
