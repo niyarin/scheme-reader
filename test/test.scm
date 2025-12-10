@@ -128,6 +128,16 @@
 (check (rdr/read (open-input-string "#!no-fold-case HELLO"))
        => 'HELLO)
 
+;; check skip-datum-comment
+(check (rdr/read (open-input-string "#;     comment! foo"))
+       => 'foo)
+
+(check (rdr/read (open-input-string "#;  #!fold-case   comment! foo"))
+       => 'foo)
+
+(check (rdr/read (open-input-string "#;  #!fold-case   '(a b c) foo"))
+       => 'foo)
+
 ;; expand
 (check (rdr/lexical-type
          (rdr/read (open-input-string "#:version")))

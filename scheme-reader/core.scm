@@ -234,6 +234,25 @@
       (let ((exactness (%read-exactness port)))
         (read-u16bit-integer port)))
 
+    (define (%read-datum-skip-comment port)
+      (read-char port);;read #\;
+      (let loop ((res '())
+                 (origins "#!;"))
+        (let ((obj (%read-internal1-core port)))
+          (if (and (lexical? obj)
+                   (or (eq? (lexical-type obj) 'SPACE)
+                       (eq? (lexical-type obj) 'COMMENT)
+                       (eq? (lexical-type obj) 'DIRECTIVE)))
+            (let ((origin (ref-origin obj)))
+              (loop (cons obj res)
+                    (string-append
+                      origins
+                      (if origin origin ""))));;TODO: Add origin to directive.
+            (%make-lexical
+              'COMMENT
+              (reverse res)
+              origins)))))
+
     (define (%read-sharp-aux pc port)
       (case pc
           ((#\\) (%read-char-literal port))
@@ -251,6 +270,9 @@
            (make-lexical
              'DIRECTIVE
              (read-identifier port)))
+          ((#\;)
+           ;; datum skip comment
+           (%read-datum-skip-comment port))
           (else (error "WIP" pc))))
 
     (define (read-sharp port)
@@ -436,7 +458,7 @@
           ((char-numeric? pc) (read-u10integer port))
           ((char=? pc #\-) (read-minus port))
           ((intraline-whitespace-char? pc)
-           (make-lexical 'SPACE (read-char port)))
+           (%make-lexical 'SPACE (read-char port) (string pc)))
           ((or (eq? pc #\newline)
                (eq? pc #\return))
            (make-lexical 'NEWLINE (read-char port)))
