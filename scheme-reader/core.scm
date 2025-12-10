@@ -4,7 +4,8 @@
       (import (scheme base)
               (only (srfi 1) remove)
               (scheme char)
-              (scheme write))) (else
+              (scheme write)))
+    (else
       (import (scheme base)
               (only (scheme list) remove)
               (scheme char)
@@ -244,6 +245,12 @@
              (error "WIP")))
           ((#\x);; <radix 16>
            (%read-radix16-number port))
+          ((#\!)
+           ;;read-internal-directive
+           (read-char port)
+           (make-lexical
+             'DIRECTIVE
+             (read-identifier port)))
           (else (error "WIP" pc))))
 
     (define (read-sharp port)
@@ -448,7 +455,8 @@
           (if (and (lexical? tkn)
                    (or (eq? (ref-type tkn) 'SPACE)
                        (eq? (ref-type tkn) 'NEWLINE)
-                       (eq? (ref-type tkn) 'COMMENT)))
+                       (eq? (ref-type tkn) 'COMMENT)
+                       (eq? (ref-type tkn) 'DIRECTIVE)))
             (loop (cons tkn res))
             (reverse (cons tkn res))))))
 
@@ -456,15 +464,26 @@
       (and (lexical? obj)
            (or (eq? (ref-type obj) 'SPACE)
                (eq? (ref-type obj) 'NEWLINE)
-               (eq? (ref-type obj) 'COMMENT))))
+               (eq? (ref-type obj) 'COMMENT)
+               (eq? (ref-type obj) 'DIRECTIVE))))
 
-    (define (remove-visual-literals obj)
+    (define (%directive-literal? obj)
+      (and (lexical? obj)
+           (eq? (ref-type obj) 'DIRECTIVE)))
+
+    (define (%fold-case-directive? obj)
+      (and (%directive-literal? obj)
+           (eq? (ref-data obj) 'fold-case)))
+
+    (define (remove-visual-literals obj case-fold-flag)
       (cond
-        ((list? obj)
-         (map remove-visual-literals (remove visual-literal? obj)))
+        ;((list? obj)
+        ; (map (lambda (o) (remove-visual-literals o case-fold-flag))
+        ;      (remove visual-literal? obj)))
         ((pair? obj)
-         (let ((head (remove-visual-literals (car obj)))
-               (rest (remove-visual-literals (cdr obj))))
+         (let* ((head (remove-visual-literals (car obj) case-fold-flag))
+                (rest (remove-visual-literals (cdr obj)
+                                              (if (%fold-case-directive? head) #t case-fold-flag))))
            (if (visual-literal? head)
              rest
              (cons head rest))))
@@ -476,14 +495,17 @@
          (ref-data obj))
         ((and (lexical? obj)
               (eq? (ref-type obj) 'DOT-PAIR))
-         (let ((rests (remove-visual-literals (ref-data obj))))
+         (let ((rests (remove-visual-literals (ref-data obj) case-fold-flag)))
            (car rests)))
+        ((and case-fold-flag
+              (symbol? obj))
+         (string->symbol (string-foldcase (symbol->string obj))))
         (else obj)))
 
     (define (read . args)
       (let* ((port (or (and (not (null? args)) (car args))
                       (current-input-port)))
-             (res (remove-visual-literals (read-internal port))))
+             (res (remove-visual-literals (read-internal port) #f)))
           (if (null? res)
             (eof-object)
             (car res))))))

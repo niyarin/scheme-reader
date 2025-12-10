@@ -1,6 +1,7 @@
 (import (scheme base)
         ;(scheme write)
         (srfi 78)
+        (scheme char)
         (prefix (scheme-reader core) rdr/))
 
 
@@ -120,12 +121,17 @@
          (open-input-string "#\\a"))
        => #\a)
 
+;; check #!fold-case
+(check (rdr/read (open-input-string "#!fold-case HELLO"))
+       => (string->symbol (string-foldcase "HELLO")))
+
+(check (rdr/read (open-input-string "#!no-fold-case HELLO"))
+       => 'HELLO)
+
 ;; expand
 (check (rdr/lexical-type
          (rdr/read (open-input-string "#:version")))
        => 'KEYWORD)
-
-
 
 (check-report)
 
