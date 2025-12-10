@@ -47,7 +47,7 @@
                  (if (single-dot? token)
                    (begin
                      (read-char port)
-                     (let ((rests (list (get-token port))))
+                     (let ((rests (list (%read-internal1-core port))))
                        (set-cdr! res-pair (make-lexical-dot-pair rests))
                        (loop rests)))
                    (begin
@@ -57,7 +57,7 @@
               ((eof-object? pc) (error "READ END!"))
               (else
                 (set-cdr! res-pair (list '()))
-                (set-car! (cdr res-pair) (get-token port))
+                (set-car! (cdr res-pair) (%read-internal1-core port))
                 (loop (cdr res-pair))))))))
 
     (define (read-oneline-comment port)
@@ -403,18 +403,18 @@
        (if (char=? (peek-char port) #\@)
          (begin
            (read-char port)
-           (list 'unquote-splicing (get-token port)))
-         (list 'unquote (get-token port))))
+           (list 'unquote-splicing (%read-internal1-core port)))
+         (list 'unquote (%read-internal1-core port))))
 
-    (define (get-token port)
+    (define (%read-internal1-core port)
       (let ((pc (peek-char port)))
         (cond
           ((eof-object? pc) (eof-object))
           ((char=? pc #\() (read-pair port))
 
           ;TODO: Use <lexical>.
-          ((char=? pc #\') (read-char port) (list 'quote (get-token port)))
-          ((char=? pc #\`) (read-char port) (list 'quasiquote (get-token port)))
+          ((char=? pc #\') (read-char port) (list 'quote (%read-internal1-core port)))
+          ((char=? pc #\`) (read-char port) (list 'quasiquote (%read-internal1-core port)))
           ((char=? pc #\,) (read-unquotes port))
 
           ((char-explicit-sign? pc)
@@ -447,7 +447,7 @@
 
     (define (read-internal port)
       (let loop ((res '()))
-        (let ((tkn (get-token port)))
+        (let ((tkn (%read-internal1-core port)))
           (if (and (lexical? tkn)
                    (or (eq? (ref-type tkn) 'SPACE)
                        (eq? (ref-type tkn) 'NEWLINE)
