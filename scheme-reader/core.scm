@@ -11,9 +11,11 @@
               (scheme char)
               (scheme write))))
   (export read read-internal lexical? lexical-type lexical-data lexical-origin
-          read-internal-or-handle-shebang)
+          read-internal-or-handle-shebang *tokenizer-mode*)
+
   (begin
     (define use-guile-style-keyword (make-parameter #t))
+    (define *tokenizer-mode* (make-parameter #f))
 
     (define-record-type <lexical>
       (%make-lexical type data origin)
@@ -273,7 +275,11 @@
              (read-identifier port)))
           ((#\;)
            ;; datum skip comment
-           (%read-datum-skip-comment port))
+           (if (*tokenizer-mode*)
+             (begin
+               (read-char port)
+               (make-lexical 'DATUM-SKIP-COMMENT-START ))
+             (%read-datum-skip-comment port)))
           (else (error "WIP" pc))))
 
     (define (read-sharp port)
@@ -440,12 +446,31 @@
       (let ((pc (peek-char port)))
         (cond
           ((eof-object? pc) (eof-object))
-          ((char=? pc #\() (read-pair port))
-
+          ((char=? pc #\()
+           (if (*tokenizer-mode*)
+             (make-lexical 'OPEN-PAREN (read-char port))
+             (read-pair port)))
+          ((char=? pc #\))
+           (if (*tokenizer-mode*)
+             (make-lexical 'CLOSE-PAREN (read-char port))
+             (error "Invalid closed paren error.")))
           ;TODO: Use <lexical>.
-          ((char=? pc #\') (read-char port) (list 'quote (%read-internal1-core port)))
-          ((char=? pc #\`) (read-char port) (list 'quasiquote (%read-internal1-core port)))
-          ((char=? pc #\,) (read-unquotes port))
+          ((char=? pc #\')
+           (if (*tokenizer-mode*)
+             (make-lexical 'QUOTE (read-char port))
+             (begin
+               (read-char port)
+               (list 'quote (%read-internal1-core port)))))
+          ((char=? pc #\`)
+           (if (*tokenizer-mode*)
+             (make-lexical 'QUASI-QUOTE (read-char port))
+             (begin
+                (read-char port)
+                (list 'quasiquote (%read-internal1-core port)))))
+          ((char=? pc #\,)
+           (if (*tokenizer-mode*)
+             (make-lexical 'UNQUOTE (read-char port))
+             (read-unquotes port)))
 
           ((char-explicit-sign? pc)
            ;;number or identifier
