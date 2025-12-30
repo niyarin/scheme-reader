@@ -11,7 +11,7 @@
               (scheme char)
               (scheme write))))
   (export read read-internal lexical? lexical-type lexical-data lexical-origin
-          read-internal-or-handle-shebang *tokenizer-mode*)
+          read-internal-or-handle-shebang *tokenizer-mode* read-token)
 
   (begin
     (define use-guile-style-keyword (make-parameter #t))
@@ -507,6 +507,10 @@
                        (eq? (ref-type tkn) 'DIRECTIVE)))
             (loop (cons tkn res))
             (reverse (cons tkn res))))))
+
+    (define (read-token port)
+      (parameterize ((*tokenizer-mode* #t))
+        (%read-internal1-core port)))
 
     (define (visual-literal? obj)
       (and (lexical? obj)
