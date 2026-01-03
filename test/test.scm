@@ -142,6 +142,11 @@
 (check (rdr/read (open-input-string "#;  #!fold-case   '(a b c) foo"))
        => 'foo)
 
+
+;; check one-line comment
+(check (rdr/read (open-input-string ";this is comment\n some-symbol"))
+       => 'some-symbol)
+
 ;; expand
 (check (rdr/lexical-type
          (rdr/read (open-input-string "#:version")))
