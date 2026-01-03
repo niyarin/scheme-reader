@@ -66,11 +66,13 @@
     (define (read-oneline-comment port)
       (read-char port)
       (let loop ((ls '()))
-        (let ((c (read-char port)))
+        (let ((c (peek-char port)))
           (if (or (char=? c #\newline)
                   (char=? c #\return))
             (make-lexical 'COMMENT (list->string (reverse ls)))
-            (loop (cons c ls))))))
+            (begin
+              (read-char port)
+              (loop (cons c ls)))))))
 
     (define (char-special-initial? c)
       (case c
