@@ -11,6 +11,7 @@
               (scheme char)
               (scheme write))))
   (export read read-internal lexical? lexical-type lexical-data lexical-origin
+          make-lexical
           read-internal-or-handle-shebang *tokenizer-mode* read-token)
 
   (begin
