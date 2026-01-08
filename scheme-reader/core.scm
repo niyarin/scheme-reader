@@ -281,7 +281,7 @@
            (if (*tokenizer-mode*)
              (begin
                (read-char port)
-               (make-lexical 'DATUM-SKIP-COMMENT-START ))
+               (make-lexical 'DATUM-SKIP-COMMENT-START "#;"))
              (%read-datum-skip-comment port)))
           (else (error "WIP" pc))))
 
