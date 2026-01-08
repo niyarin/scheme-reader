@@ -1,5 +1,5 @@
 (import (scheme base)
-        ;(scheme write)
+        (scheme write)
         (srfi 78)
         (scheme char)
         (prefix (scheme-reader core) rdr/))
@@ -24,6 +24,8 @@
 (check (rdr/read (open-input-string "-3"))
        => -3)
 
+(check (rdr/read (open-input-string "3.0"))
+       => 3)
 
 (check (rdr/read (open-input-string "1.234"))
        => 1.234)
@@ -151,6 +153,11 @@
 (check (rdr/lexical-type
          (rdr/read (open-input-string "#:version")))
        => 'KEYWORD)
+
+;; save original
+(check (let ((port (open-input-string "3.0")))
+         (rdr/lexical-origin (car (rdr/read-internal port))))
+       => "3.0")
 
 (check-report)
 

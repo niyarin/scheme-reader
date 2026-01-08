@@ -332,8 +332,15 @@
                                      (char->integer #\0)))))
             ((and (not (eof-object? pc)) (char=? pc #\.))
              (read-char port)
-             (+ (%read-fractional-part port)
-                res))
+             (let ((fractal (%read-fractional-part port)))
+               (if (zero? fractal)
+                 (%make-lexical
+                   'ATOM
+                   (+ fractal res)
+                   (string-append
+                     (number->string res)
+                     ".0"))
+                 (+ fractal res))))
             (else res)))))
 
     (define (read-u16bit-integer port)
