@@ -128,9 +128,16 @@
       (let* ((first-char (read-char port))
              (pc (peek-char port)))
         (if (and (not (eof-object? pc)) (char-numeric? pc))
+          (let ((num (read-u10integer port)))
             (case first-char
-              ((#\+)  (read-u10integer port))
-              ((#\-)  (- (read-u10integer port))))
+              ((#\+) num)
+              ((#\-)
+               (if (lexical? num)
+                 (%make-lexical
+                   'ATOM
+                   (- (lexical-data num))
+                   (string-append "-" (lexical-origin num)))
+                 (- num)))))
             (string->symbol
               (string-append
                 (string first-char)
